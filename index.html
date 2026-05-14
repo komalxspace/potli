@@ -34,12 +34,21 @@
 <body>
 <div id="root"></div>
 
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- React + Babel -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+<script>
+// Initialise Supabase client (available globally as window.supabase)
+const { createClient } = supabase;
+window.supabase = createClient('https://wrbqhsgrrouhdzyyehgl.supabase.co', 'sb_publishable_DtTBy6591j24LAZ1u7EkyQ_jkyFMGRm');
+</script>
+
 <script type="text/babel" data-presets="react">
-/* global React, ReactDOM */
+/* global React, ReactDOM, supabase */
 // ─── ICON COMPONENTS (replacing lucide-react imports) ─────────────────────────
 const { createElement: h, useState, useEffect, useRef } = React;
 
@@ -152,21 +161,20 @@ const HomeIcon = Home;
 
 
 
-// ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
+// ─── AUTH SCREEN (Supabase) ───────────────────────────────────────────────────
 function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('signin');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [mode, setMode]         = useState('signin');
+  const [name, setName]         = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]       = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const inp = {
     width:'100%', padding:'13px 14px', background:'#fff',
     border:'1px solid rgba(44,42,38,0.12)', borderRadius:12,
     fontSize:14, color:'#1a1816', outline:'none', boxSizing:'border-box',
-    fontFamily:"'Inter',system-ui",
   };
   const lbl = { fontSize:10, letterSpacing:'0.1em', fontWeight:600, textTransform:'uppercase', color:'#a8a29e', display:'block', marginBottom:6 };
 
@@ -176,114 +184,97 @@ function AuthScreen({ onAuth }) {
     if (mode === 'signup' && !name.trim()) { setError('Please enter your name.'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 500));
     try {
-      const key = `wt-user-${email.toLowerCase().trim()}`;
       if (mode === 'signup') {
-        if (localStorage.getItem(key)) { setError('An account with this email already exists.'); setSubmitting(false); return; }
-        const user = { name: name.trim(), email: email.toLowerCase().trim(), password };
-        localStorage.setItem(key, JSON.stringify(user));
-        localStorage.setItem('wt-session', JSON.stringify({ email: user.email, name: user.name }));
-        onAuth({ name: user.name, email: user.email });
+        const { data, error: err } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: { data: { name: name.trim() } }
+        });
+        if (err) { setError(err.message); setSubmitting(false); return; }
+        if (data.user) onAuth({ id: data.user.id, email: data.user.email, name: name.trim() });
       } else {
-        const stored = localStorage.getItem(key);
-        if (!stored) { setError('No account found with this email.'); setSubmitting(false); return; }
-        const user = JSON.parse(stored);
-        if (user.password !== password) { setError('Incorrect password.'); setSubmitting(false); return; }
-        localStorage.setItem('wt-session', JSON.stringify({ email: user.email, name: user.name }));
-        onAuth({ name: user.name, email: user.email });
+        const { data, error: err } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(), password
+        });
+        if (err) { setError(err.message); setSubmitting(false); return; }
+        const meta = data.user?.user_metadata;
+        onAuth({ id: data.user.id, email: data.user.email, name: meta?.name || '' });
       }
     } catch(e) { setError('Something went wrong. Please try again.'); }
     setSubmitting(false);
   };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600&display=swap');
-        *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
-        body{margin:0;font-family:'Inter',system-ui,sans-serif;}
-        .serif{font-family:'Fraunces',Georgia,serif;}
-        @keyframes auth-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-        .auth-up{animation:auth-up .45s ease both;}
-        input::placeholder{color:#c4b8a8;}
-      `}</style>
-
-      <div style={{ minHeight:'100vh', background:'#FAF7F2', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 24px 56px', fontFamily:"'Inter',system-ui" }}>
-        {/* Logo */}
-        <div className="auth-up" style={{ textAlign:'center', marginBottom:36, animationDelay:'.05s' }}>
-          <div style={{ width:58, height:58, borderRadius:18, background:'#1a1816', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:'0 4px 18px rgba(26,24,22,0.18)' }}>
-            <span style={{ fontSize:24, fontFamily:"'Fraunces',Georgia,serif", color:'#f5f3ef', fontWeight:600, lineHeight:1 }}>W</span>
-          </div>
-          <h1 className="serif" style={{ fontSize:30, fontWeight:600, color:'#1a1816', margin:0, letterSpacing:'-0.3px', lineHeight:1 }}>Wardrobe</h1>
-          <p style={{ fontSize:13, color:'#a8a29e', marginTop:7, fontWeight:400 }}>
-            {mode === 'signin' ? 'Welcome back' : 'Track your clothes across every home'}
-          </p>
+    <div style={{ minHeight:'100vh', background:'#FAF7F2', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 24px 56px' }}>
+      <div className="auth-up" style={{ textAlign:'center', marginBottom:36, animationDelay:'.05s' }}>
+        <div style={{ width:58, height:58, borderRadius:18, background:'#1a1816', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:'0 4px 18px rgba(26,24,22,0.18)' }}>
+          <span style={{ fontSize:28, lineHeight:1 }}>👜</span>
         </div>
-
-        {/* Card */}
-        <div className="auth-up" style={{ width:'100%', maxWidth:380, background:'#fff', borderRadius:24, padding:'26px 22px 22px', boxShadow:'0 2px 24px rgba(44,42,38,0.09)', animationDelay:'.12s' }}>
-          {/* Tabs */}
-          <div style={{ display:'flex', background:'#f5f3ef', borderRadius:12, padding:3, marginBottom:22, gap:3 }}>
-            {[['signin','Sign In'],['signup','Create Account']].map(([m, label]) => (
-              <button key={m} onClick={() => { setMode(m); setError(''); }}
-                style={{ flex:1, padding:'9px 6px', borderRadius:10, border:'none', cursor:'pointer', fontSize:12, fontWeight:500, transition:'all .18s', fontFamily:"'Inter',system-ui",
-                  background: mode===m ? '#fff' : 'transparent',
-                  color: mode===m ? '#1a1816' : '#a8a29e',
-                  boxShadow: mode===m ? '0 1px 4px rgba(44,42,38,0.1)' : 'none',
-                }}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            {mode === 'signup' && (
-              <div>
-                <span style={lbl}>Full Name</span>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder="Priya Sharma" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
-              </div>
-            )}
-            <div>
-              <span style={lbl}>Email</span>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
-            </div>
-            <div>
-              <span style={lbl}>Password</span>
-              <div style={{ position:'relative' }}>
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder={mode==='signup' ? 'Min. 6 characters' : '••••••••'} style={{ ...inp, paddingRight:44 }}
-                  onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
-                <button onClick={() => setShowPass(p => !p)}
-                  style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'#a8a29e' }}>
-                  {showPass ? <EyeOff size={15} strokeWidth={1.8}/> : <Eye size={15} strokeWidth={1.8}/>}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontSize:12, color:'#c0392b', fontWeight:500 }}>
-                {error}
-              </div>
-            )}
-
-            <button onClick={handleSubmit} disabled={submitting}
-              style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor: submitting ? 'not-allowed' : 'pointer',
-                fontSize:14, fontWeight:600, letterSpacing:'0.02em', marginTop:2, transition:'opacity .15s',
-                fontFamily:"'Inter',system-ui", background: submitting ? '#d6cfc6' : '#1a1816', color:'#f5f3ef',
-              }}>
-              {submitting ? '…' : mode==='signin' ? 'Sign In' : 'Create Account'}
-            </button>
-          </div>
-        </div>
-
-        <p className="auth-up" style={{ fontSize:11, color:'#c4b8a8', marginTop:18, textAlign:'center', lineHeight:1.6, animationDelay:'.2s' }}>
-          Your data is stored locally on this device.<br/>No server, no tracking.
+        <h1 className="serif" style={{ fontSize:30, fontWeight:600, color:'#1a1816', margin:0, letterSpacing:'-0.3px' }}>Potli</h1>
+        <p style={{ fontSize:13, color:'#a8a29e', marginTop:7 }}>
+          {mode === 'signin' ? 'Welcome back' : 'Track your clothes across every home'}
         </p>
       </div>
-    </>
+
+      <div className="auth-up" style={{ width:'100%', maxWidth:380, background:'#fff', borderRadius:24, padding:'26px 22px 22px', boxShadow:'0 2px 24px rgba(44,42,38,0.09)', animationDelay:'.12s' }}>
+        <div style={{ display:'flex', background:'#f5f3ef', borderRadius:12, padding:3, marginBottom:22, gap:3 }}>
+          {[['signin','Sign In'],['signup','Create Account']].map(([m, label]) => (
+            <button key={m} onClick={() => { setMode(m); setError(''); }}
+              style={{ flex:1, padding:'9px 6px', borderRadius:10, border:'none', cursor:'pointer', fontSize:12, fontWeight:500, transition:'all .18s',
+                background: mode===m ? '#fff' : 'transparent', color: mode===m ? '#1a1816' : '#a8a29e',
+                boxShadow: mode===m ? '0 1px 4px rgba(44,42,38,0.1)' : 'none' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          {mode === 'signup' && (
+            <div>
+              <span style={lbl}>Full Name</span>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Priya Sharma" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+            </div>
+          )}
+          <div>
+            <span style={lbl}>Email</span>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+          </div>
+          <div>
+            <span style={lbl}>Password</span>
+            <div style={{ position:'relative' }}>
+              <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder={mode==='signup' ? 'Min. 6 characters' : '••••••••'} style={{ ...inp, paddingRight:44 }}
+                onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+              <button onClick={() => setShowPass(p => !p)}
+                style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'#a8a29e' }}>
+                {showPass ? <EyeOff size={15} strokeWidth={1.8}/> : <Eye size={15} strokeWidth={1.8}/>}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontSize:12, color:'#c0392b', fontWeight:500 }}>
+              {error}
+            </div>
+          )}
+
+          <button onClick={handleSubmit} disabled={submitting}
+            style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor: submitting ? 'not-allowed' : 'pointer',
+              fontSize:14, fontWeight:600, letterSpacing:'0.02em', marginTop:2,
+              background: submitting ? '#d6cfc6' : '#1a1816', color:'#f5f3ef' }}>
+            {submitting ? '…' : mode==='signin' ? 'Sign In' : 'Create Account'}
+          </button>
+        </div>
+      </div>
+
+      <p className="auth-up" style={{ fontSize:11, color:'#c4b8a8', marginTop:18, textAlign:'center', lineHeight:1.6, animationDelay:'.2s' }}>
+        Your photos stay on this device.<br/>Account data syncs securely to the cloud.
+      </p>
+    </div>
   );
 }
+
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const GOLD = '#B8923D';
@@ -532,8 +523,9 @@ function HomeRow({ index, value, count, canDelete, onSave, onDelete }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function WardrobeTracker() {
-  const [session, setSession]           = useState(null);  // null = not checked yet
+  const [session, setSession]           = useState(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [syncError, setSyncError]       = useState('');
   const [clothes, setClothes]           = useState([]);
   const [houses, setHouses]             = useState(DEFAULT_HOUSES);
   const [categories, setCategories]     = useState(DEFAULT_CATEGORIES);
@@ -559,13 +551,16 @@ function WardrobeTracker() {
   const [analyzeError, setAnalyzeError] = useState('');
   const fileInputRef = useRef(null);
 
+  // ── Supabase session check on mount ────────────────────────────────────────
   useEffect(() => {
-    // Check for existing session first
-    try {
-      const s = localStorage.getItem('wt-session');
-      if (s) setSession(JSON.parse(s));
-    } catch(e) {}
-    setSessionChecked(true);
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s) setSession({ id: s.user.id, email: s.user.email, name: s.user.user_metadata?.name || '' });
+      setSessionChecked(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (!s) { setSession(null); setClothes([]); setHouses(DEFAULT_HOUSES); setCategories(DEFAULT_CATEGORIES); setProfile({ name:'' }); setFavorites({}); }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -573,45 +568,148 @@ function WardrobeTracker() {
     else if (sessionChecked && !session) setLoading(false);
   }, [sessionChecked, session]);
 
+  // ── Photo helpers — stored locally by user+id ──────────────────────────────
+  const photoKey  = (id) => `potli-photo-${session?.id}-${id}`;
+  const getPhoto  = (id) => { try { return localStorage.getItem(photoKey(id)) || ''; } catch(e) { return ''; } };
+  const savePhoto = (id, data) => { try { if (data) localStorage.setItem(photoKey(id), data); } catch(e) {} };
+  const dropPhoto = (id) => { try { localStorage.removeItem(photoKey(id)); } catch(e) {} };
+
+  // ── Load all cloud data ────────────────────────────────────────────────────
   const loadAll = async () => {
-    const load = (key, setter) => {
-      try { const v = localStorage.getItem(key); if (v) setter(JSON.parse(v)); } catch(e) {}
-    };
-    await load('wt2-clothes', setClothes);
-    await load('wt2-houses', setHouses);
-    await load('wt2-categories', setCategories);
-    await load('wt2-profile', setProfile);
-    await load('wt2-favs', setFavorites);
+    try {
+      const uid = session.id;
+      const [{ data: hRows }, { data: cRows }, { data: catRows }, { data: prof }] = await Promise.all([
+        supabase.from('houses').select('*').eq('user_id', uid).order('position'),
+        supabase.from('clothes').select('*').eq('user_id', uid).order('added_at'),
+        supabase.from('categories').select('*').eq('user_id', uid),
+        supabase.from('profiles').select('*').eq('id', uid).single(),
+      ]);
+
+      if (hRows && hRows.length) setHouses(hRows.map(r => r.name));
+      else await initDefaultHouses(uid);
+
+      if (cRows) {
+        // Attach locally stored photos back onto items
+        const items = cRows.map(r => ({
+          id: r.id, name: r.name, category: r.category, subType: r.sub_type,
+          color: r.color, house: r.house_position ?? 0,
+          photo: getPhoto(r.id) || (r.sub_type ? makeClothSvg(r.sub_type, r.color) : ''),
+          addedAt: r.added_at,
+        }));
+        setClothes(items);
+      }
+
+      if (catRows && catRows.length) {
+        const catObj = {};
+        catRows.forEach(r => { catObj[r.name] = r.types || []; });
+        setCategories(catObj);
+      } else {
+        await initDefaultCategories(uid);
+      }
+
+      if (prof) setProfile({ name: prof.name || session.name || '' });
+      else {
+        await supabase.from('profiles').upsert({ id: uid, name: session.name || '' });
+        setProfile({ name: session.name || '' });
+      }
+
+      // Load favorites from localStorage (lightweight, device-specific)
+      try {
+        const fv = localStorage.getItem(`potli-favs-${uid}`);
+        if (fv) setFavorites(JSON.parse(fv));
+      } catch(e) {}
+    } catch(err) {
+      console.error('loadAll error', err);
+      setSyncError('Could not load data. Check your connection.');
+    }
     setLoading(false);
   };
 
-  const persist = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} };
-  const saveClothes    = v => { setClothes(v);    persist('wt2-clothes', v); };
-  const saveHouses     = v => { setHouses(v);     persist('wt2-houses', v); };
-  const saveCategories = v => { setCategories(v); persist('wt2-categories', v); };
-  const saveProfile    = v => { setProfile(v);    persist('wt2-profile', v); };
-  const saveFavs       = v => { setFavorites(v);  persist('wt2-favs', v); };
-
-  const handleAuth = (user) => {
-    setSession(user);
-    saveProfile({ name: user.name });
+  const initDefaultHouses = async (uid) => {
+    const rows = DEFAULT_HOUSES.map((name, i) => ({ user_id: uid, name, position: i }));
+    await supabase.from('houses').insert(rows);
+    setHouses(DEFAULT_HOUSES);
   };
 
-  const handleSignOut = () => {
-    try { localStorage.removeItem('wt-session'); } catch(e) {}
+  const initDefaultCategories = async (uid) => {
+    const rows = Object.entries(DEFAULT_CATEGORIES).map(([name, types]) => ({ user_id: uid, name, types }));
+    await supabase.from('categories').insert(rows);
+    setCategories(DEFAULT_CATEGORIES);
+  };
+
+  // ── Save helpers ───────────────────────────────────────────────────────────
+  const saveClothes = async (items) => {
+    setClothes(items);
+    // Sync to Supabase in background
+    const uid = session?.id; if (!uid) return;
+    const { data: hRows } = await supabase.from('houses').select('id,name,position').eq('user_id', uid).order('position');
+    const houseIdMap = {};
+    if (hRows) hRows.forEach(r => { houseIdMap[r.position] = r.id; });
+    const rows = items.map(item => ({
+      id: item.id, user_id: uid, name: item.name, category: item.category,
+      sub_type: item.subType, color: item.color,
+      house_position: item.house, added_at: item.addedAt || new Date().toISOString(),
+    }));
+    await supabase.from('clothes').upsert(rows, { onConflict: 'id' });
+    // Delete removed items
+    const ids = items.map(i => i.id);
+    const { data: existing } = await supabase.from('clothes').select('id').eq('user_id', uid);
+    if (existing) {
+      const toDelete = existing.map(r => r.id).filter(id => !ids.includes(id));
+      if (toDelete.length) {
+        await supabase.from('clothes').delete().in('id', toDelete);
+        toDelete.forEach(id => dropPhoto(id));
+      }
+    }
+  };
+
+  const saveHouses = async (names) => {
+    setHouses(names);
+    const uid = session?.id; if (!uid) return;
+    await supabase.from('houses').delete().eq('user_id', uid);
+    const rows = names.map((name, i) => ({ user_id: uid, name, position: i }));
+    await supabase.from('houses').insert(rows);
+  };
+
+  const saveCategories = async (catObj) => {
+    setCategories(catObj);
+    const uid = session?.id; if (!uid) return;
+    await supabase.from('categories').delete().eq('user_id', uid);
+    const rows = Object.entries(catObj).map(([name, types]) => ({ user_id: uid, name, types }));
+    if (rows.length) await supabase.from('categories').insert(rows);
+  };
+
+  const saveProfile = async (p) => {
+    setProfile(p);
+    const uid = session?.id; if (!uid) return;
+    await supabase.from('profiles').upsert({ id: uid, name: p.name, updated_at: new Date().toISOString() });
+  };
+
+  const saveFavs = (fv) => {
+    setFavorites(fv);
+    try { localStorage.setItem(`potli-favs-${session?.id}`, JSON.stringify(fv)); } catch(e) {}
+  };
+
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  const handleAuth = (user) => {
+    setSession(user);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
     setSession(null);
     setShowSettings(false);
-    // Reset in-memory state so next sign-in starts fresh
     setClothes([]); setHouses(DEFAULT_HOUSES); setCategories(DEFAULT_CATEGORIES);
     setProfile({ name:'' }); setFavorites({});
   };
 
   const seedData = () => {
-    const items = SEEDS.map((d, i) => ({
-      id: `s-${Date.now()}-${i}`, ...d,
-      photo: makeClothSvg(d.subType, d.color),
-      addedAt: new Date().toISOString(),
-    }));
+    const items = SEEDS.map((d, i) => {
+      const id = `s-${Date.now()}-${i}`;
+      const photo = makeClothSvg(d.subType, d.color);
+      savePhoto(id, photo); // store photo locally
+      return { id, ...d, photo, addedAt: new Date().toISOString() };
+    });
     saveClothes(items);
   };
 
@@ -679,9 +777,12 @@ function WardrobeTracker() {
     if (!form.name.trim()) return;
     const photo = form.photo || (form.subType ? makeClothSvg(form.subType, form.color) : '');
     if (editingItem) {
+      savePhoto(editingItem.id, photo); // persist photo locally
       saveClothes(clothes.map(c => c.id === editingItem.id ? { ...c, ...form, photo } : c));
     } else {
-      saveClothes([...clothes, { id: Date.now().toString(), ...form, photo, addedAt: new Date().toISOString() }]);
+      const id = Date.now().toString();
+      savePhoto(id, photo); // persist photo locally
+      saveClothes([...clothes, { id, ...form, photo, addedAt: new Date().toISOString() }]);
     }
     setShowAddModal(false);
   };
@@ -1208,8 +1309,7 @@ function WardrobeTracker() {
   );
 }
 
-
-// Mount
+// ─── MOUNT ────────────────────────────────────────────────────────────────────
 ReactDOM.createRoot(document.getElementById('root')).render(
   React.createElement(WardrobeTracker)
 );
