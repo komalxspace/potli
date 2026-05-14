@@ -2,17 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <base href="/potli/"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#1a1816"/>
   <meta name="color-scheme" content="light"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Potli"/>
-  <meta name="description" content="Track your clothes across multiple homes. Built for Indian families."/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.png"/>
-  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+  <meta name="description" content="Track your clothes across multiple homes."/>
+  <link rel="manifest" href="/potli/manifest.json"/>
+  <link rel="apple-touch-icon" href="/potli/icon-192.png"/>
+  <link rel="icon" type="image/svg+xml" href="/potli/icon.svg"/>
   <title>Potli</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -35,13 +34,12 @@
 <body>
 <div id="root"></div>
 
-<!-- React + Babel from CDN — no build step needed -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <script type="text/babel" data-presets="react">
-// ─── ICON SHIM ───────────────────────────────────────────────────────────────
+/* global React, ReactDOM */
 // ─── ICON COMPONENTS (replacing lucide-react imports) ─────────────────────────
 const { createElement: h, useState, useEffect, useRef } = React;
 
@@ -153,11 +151,6 @@ function Home({ size=24, color='currentColor', strokeWidth=2, fill='none', style
 const HomeIcon = Home;
 
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
-  Plus, ChevronLeft, Menu, Heart, Pencil, Search, Camera, Sparkles,
-  ArrowRightLeft, Trash2, LayoutGrid, List, ChevronRight,
-  X, Home as HomeIcon, Tag, Layers, Settings, Eye, EyeOff, LogOut
-} from 'lucide-react';
 
 // ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
 function AuthScreen({ onAuth }) {
@@ -1216,23 +1209,17 @@ function WardrobeTracker() {
 }
 
 
-// ─── MOUNT ───────────────────────────────────────────────────────────────────
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(WardrobeTracker));
+// Mount
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(WardrobeTracker)
+);
 </script>
 
 <script>
-// Register service worker (probe first to skip in dev/preview)
 if ('serviceWorker' in navigator) {
-  fetch('sw.js', { method: 'HEAD' })
-    .then(r => {
-      if (r.ok) {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('[Potli] SW registered:', reg.scope))
-          .catch(err => console.warn('[Potli] SW error:', err));
-      }
-    })
-    .catch(() => {}); // silently skip in preview environments
+  fetch('/potli/sw.js', { method: 'HEAD' })
+    .then(r => { if (r.ok) navigator.serviceWorker.register('/potli/sw.js'); })
+    .catch(() => {});
 }
 </script>
 </body>
