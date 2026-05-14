@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <base href="/potli/"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a1816"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Potli"/>
+  <meta name="description" content="Track your clothes across multiple homes. Built for Indian families."/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+  <title>Potli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+    html,body{margin:0;padding:0;background:#FAF7F2;font-family:'Inter',system-ui,sans-serif;
+      padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+    *{-webkit-overflow-scrolling:touch;}
+    .serif{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;}
+    input,button,select,textarea{font-family:'Inter',system-ui,sans-serif;}
+    input::placeholder{color:#c4b8a8;}
+    @keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .fade-up{animation:fade-up .3s ease both;}
+    @keyframes auth-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .auth-up{animation:auth-up .45s ease both;}
+    .hs::-webkit-scrollbar{display:none;}.hs{scrollbar-width:none;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React + Babel from CDN — no build step needed -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+// ─── ICON SHIM ───────────────────────────────────────────────────────────────
+// ─── ICON COMPONENTS (replacing lucide-react imports) ─────────────────────────
+const { createElement: h, useState, useEffect, useRef } = React;
+
+function Plus({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M12 5v14M5 12h14'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function ChevronLeft({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M15 18l-6-6 6-6'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function ChevronRight({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M9 18l6-6-6-6'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Menu({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M4 6h16M4 12h16M4 18h16'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Heart({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Pencil({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Search({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Camera({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Sparkles({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M12 3l1.09 3.26L16.5 7.5l-3.41 1.24L12 12l-1.09-3.26L7.5 7.5l3.41-1.24L12 3zM5 17l.55 1.64L7.5 19.5l-1.95.86L5 22l-.55-1.64L2.5 19.5l1.95-.86L5 17zM19 17l.55 1.64 1.95.86-1.95.86L19 22l-.55-1.64-1.95-.86 1.95-.86L19 17z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function ArrowRightLeft({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M21 7H3M21 7l-4-4M21 7l-4 4M3 17h18M3 17l4 4M3 17l4-4'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Trash2({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function LayoutGrid({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function List({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function X({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M18 6L6 18M6 6l12 12'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Tag({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Layers({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Settings({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Eye({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function EyeOff({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function LogOut({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+function Home({ size=24, color='currentColor', strokeWidth=2, fill='none', style={}, ...rest }) {
+  return h('svg', { xmlns:'http://www.w3.org/2000/svg', width:size, height:size, viewBox:'0 0 24 24', fill, stroke:color, strokeWidth, strokeLinecap:'round', strokeLinejoin:'round', style, ...rest },
+    ...'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10'.split('M').filter(Boolean).map((p,i) => h('path', { key:i, d:'M'+p }))
+  );
+}
+const HomeIcon = Home;
+
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+  Plus, ChevronLeft, Menu, Heart, Pencil, Search, Camera, Sparkles,
+  ArrowRightLeft, Trash2, LayoutGrid, List, ChevronRight,
+  X, Home as HomeIcon, Tag, Layers, Settings, Eye, EyeOff, LogOut
+} from 'lucide-react';
+
+// ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth }) {
+  const [mode, setMode] = useState('signin');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const inp = {
+    width:'100%', padding:'13px 14px', background:'#fff',
+    border:'1px solid rgba(44,42,38,0.12)', borderRadius:12,
+    fontSize:14, color:'#1a1816', outline:'none', boxSizing:'border-box',
+    fontFamily:"'Inter',system-ui",
+  };
+  const lbl = { fontSize:10, letterSpacing:'0.1em', fontWeight:600, textTransform:'uppercase', color:'#a8a29e', display:'block', marginBottom:6 };
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!email.trim() || !password.trim()) { setError('Please fill in all fields.'); return; }
+    if (mode === 'signup' && !name.trim()) { setError('Please enter your name.'); return; }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    setSubmitting(true);
+    await new Promise(r => setTimeout(r, 500));
+    try {
+      const key = `wt-user-${email.toLowerCase().trim()}`;
+      if (mode === 'signup') {
+        if (localStorage.getItem(key)) { setError('An account with this email already exists.'); setSubmitting(false); return; }
+        const user = { name: name.trim(), email: email.toLowerCase().trim(), password };
+        localStorage.setItem(key, JSON.stringify(user));
+        localStorage.setItem('wt-session', JSON.stringify({ email: user.email, name: user.name }));
+        onAuth({ name: user.name, email: user.email });
+      } else {
+        const stored = localStorage.getItem(key);
+        if (!stored) { setError('No account found with this email.'); setSubmitting(false); return; }
+        const user = JSON.parse(stored);
+        if (user.password !== password) { setError('Incorrect password.'); setSubmitting(false); return; }
+        localStorage.setItem('wt-session', JSON.stringify({ email: user.email, name: user.name }));
+        onAuth({ name: user.name, email: user.email });
+      }
+    } catch(e) { setError('Something went wrong. Please try again.'); }
+    setSubmitting(false);
+  };
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600&display=swap');
+        *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+        body{margin:0;font-family:'Inter',system-ui,sans-serif;}
+        .serif{font-family:'Fraunces',Georgia,serif;}
+        @keyframes auth-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        .auth-up{animation:auth-up .45s ease both;}
+        input::placeholder{color:#c4b8a8;}
+      `}</style>
+
+      <div style={{ minHeight:'100vh', background:'#FAF7F2', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 24px 56px', fontFamily:"'Inter',system-ui" }}>
+        {/* Logo */}
+        <div className="auth-up" style={{ textAlign:'center', marginBottom:36, animationDelay:'.05s' }}>
+          <div style={{ width:58, height:58, borderRadius:18, background:'#1a1816', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:'0 4px 18px rgba(26,24,22,0.18)' }}>
+            <span style={{ fontSize:24, fontFamily:"'Fraunces',Georgia,serif", color:'#f5f3ef', fontWeight:600, lineHeight:1 }}>W</span>
+          </div>
+          <h1 className="serif" style={{ fontSize:30, fontWeight:600, color:'#1a1816', margin:0, letterSpacing:'-0.3px', lineHeight:1 }}>Wardrobe</h1>
+          <p style={{ fontSize:13, color:'#a8a29e', marginTop:7, fontWeight:400 }}>
+            {mode === 'signin' ? 'Welcome back' : 'Track your clothes across every home'}
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="auth-up" style={{ width:'100%', maxWidth:380, background:'#fff', borderRadius:24, padding:'26px 22px 22px', boxShadow:'0 2px 24px rgba(44,42,38,0.09)', animationDelay:'.12s' }}>
+          {/* Tabs */}
+          <div style={{ display:'flex', background:'#f5f3ef', borderRadius:12, padding:3, marginBottom:22, gap:3 }}>
+            {[['signin','Sign In'],['signup','Create Account']].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setError(''); }}
+                style={{ flex:1, padding:'9px 6px', borderRadius:10, border:'none', cursor:'pointer', fontSize:12, fontWeight:500, transition:'all .18s', fontFamily:"'Inter',system-ui",
+                  background: mode===m ? '#fff' : 'transparent',
+                  color: mode===m ? '#1a1816' : '#a8a29e',
+                  boxShadow: mode===m ? '0 1px 4px rgba(44,42,38,0.1)' : 'none',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {mode === 'signup' && (
+              <div>
+                <span style={lbl}>Full Name</span>
+                <input value={name} onChange={e => setName(e.target.value)} placeholder="Priya Sharma" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+              </div>
+            )}
+            <div>
+              <span style={lbl}>Email</span>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" style={inp} onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+            </div>
+            <div>
+              <span style={lbl}>Password</span>
+              <div style={{ position:'relative' }}>
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder={mode==='signup' ? 'Min. 6 characters' : '••••••••'} style={{ ...inp, paddingRight:44 }}
+                  onKeyDown={e => e.key==='Enter' && handleSubmit()}/>
+                <button onClick={() => setShowPass(p => !p)}
+                  style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'#a8a29e' }}>
+                  {showPass ? <EyeOff size={15} strokeWidth={1.8}/> : <Eye size={15} strokeWidth={1.8}/>}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'9px 12px', fontSize:12, color:'#c0392b', fontWeight:500 }}>
+                {error}
+              </div>
+            )}
+
+            <button onClick={handleSubmit} disabled={submitting}
+              style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', cursor: submitting ? 'not-allowed' : 'pointer',
+                fontSize:14, fontWeight:600, letterSpacing:'0.02em', marginTop:2, transition:'opacity .15s',
+                fontFamily:"'Inter',system-ui", background: submitting ? '#d6cfc6' : '#1a1816', color:'#f5f3ef',
+              }}>
+              {submitting ? '…' : mode==='signin' ? 'Sign In' : 'Create Account'}
+            </button>
+          </div>
+        </div>
+
+        <p className="auth-up" style={{ fontSize:11, color:'#c4b8a8', marginTop:18, textAlign:'center', lineHeight:1.6, animationDelay:'.2s' }}>
+          Your data is stored locally on this device.<br/>No server, no tracking.
+        </p>
+      </div>
+    </>
+  );
+}
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const GOLD = '#B8923D';
+const CREAM = '#FAF7F2';
+const CARD = '#FFFFFF';
+const btnReset = { background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', justifyContent:'center' };
+const labelStyle = { fontSize:9, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', color:'#a8a29e', marginBottom:6, display:'block', fontFamily:"'Inter',system-ui" };
+
+const DEFAULT_CATEGORIES = {
+  'Tops':['T-Shirt','Shirt','Blouse','Tank Top','Sweater','Hoodie'],
+  'Bottoms':['Jeans','Trousers','Shorts','Leggings','Track Pants'],
+  'Indian Wear':['Kurta','Kurti','Saree','Lehenga','Salwar Suit','Dupatta','Dhoti','Sherwani'],
+  'Dresses':['One Piece','Maxi Dress','Midi Dress','Gown'],
+  'Innerwear':['Bra','Panties','Boxers','Briefs','Vest','Camisole'],
+  'Sleepwear':['Pajamas','Night Suit','Nightie'],
+  'Outerwear':['Jacket','Coat','Blazer','Shawl','Cardigan'],
+  'Accessories':['Scarf','Belt','Tie','Socks'],
+  'Footwear':['Shoes','Sandals','Heels','Sneakers','Flats'],
+  'Other':['Other'],
+};
+const DEFAULT_HOUSES = ['My Home', 'Parents', 'In-Laws'];
+const SEEDS = [
+  {name:'White Cotton Kurta',  category:'Indian Wear', subType:'Kurta',       color:'White',  house:0},
+  {name:'Blue Denim Jeans',    category:'Bottoms',     subType:'Jeans',       color:'Blue',   house:0},
+  {name:'Black T-Shirt',       category:'Tops',        subType:'T-Shirt',     color:'Black',  house:0},
+  {name:'White Sneakers',      category:'Footwear',    subType:'Sneakers',    color:'White',  house:0},
+  {name:'Red Silk Saree',      category:'Indian Wear', subType:'Saree',       color:'Red',    house:1},
+  {name:'Yellow Salwar Suit',  category:'Indian Wear', subType:'Salwar Suit', color:'Yellow', house:1},
+  {name:'Floral One Piece',    category:'Dresses',     subType:'One Piece',   color:'Floral', house:1},
+  {name:'Green Lehenga',       category:'Indian Wear', subType:'Lehenga',     color:'Green',  house:2},
+  {name:'Navy Blazer',         category:'Outerwear',   subType:'Blazer',      color:'Navy',   house:2},
+  {name:'Brown Sandals',       category:'Footwear',    subType:'Sandals',     color:'Brown',  house:2},
+];
+
+// ─── SVG ILLUSTRATIONS ────────────────────────────────────────────────────────
+const makeClothSvg = (type, color) => {
+  const colorMap = {
+    'White':'#F5F3EF','Black':'#2C2A26','Blue':'#5B7CA3','Red':'#B85450','Green':'#7A8B6F',
+    'Yellow':'#D4A85C','Pink':'#D89AAB','Navy':'#3A4A66','Grey':'#9C9A95','Brown':'#7A5C42',
+    'Maroon':'#7A3838','Beige':'#D4C5A0','Floral':'#E0A8B5','Light blue':'#A8C0D4','Mixed':'#B5A8C0',
+  };
+  const c = colorMap[color] || '#9C9A95';
+  const s = 'rgba(44,42,38,0.35)'; const w = '0.8';
+  const shapes = {
+    'Kurta':`<path d="M30 30 L40 25 L60 25 L70 30 L75 50 L75 95 L25 95 L25 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><line x1="50" y1="25" x2="50" y2="50" stroke="${s}" stroke-width="0.4"/>`,
+    'Kurti':`<path d="M30 30 L40 25 L60 25 L70 30 L73 50 L70 80 L30 80 L27 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Saree':`<path d="M20 20 Q50 10 80 20 L85 50 Q70 70 75 95 L25 95 Q30 70 15 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Lehenga':`<path d="M35 20 L65 20 L70 50 L85 95 L15 95 L30 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Salwar Suit':`<path d="M30 25 L70 25 L75 60 L60 95 L40 95 L25 60 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Dupatta':`<path d="M15 30 Q50 20 85 30 L80 70 Q50 60 20 70 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'T-Shirt':`<path d="M25 30 L40 22 L40 30 L60 30 L60 22 L75 30 L70 45 L65 45 L65 90 L35 90 L35 45 L30 45 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Shirt':`<path d="M25 28 L40 22 L40 32 L60 32 L60 22 L75 28 L72 45 L68 45 L68 92 L32 92 L32 45 L28 45 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><line x1="50" y1="32" x2="50" y2="92" stroke="${s}" stroke-width="0.4"/>`,
+    'Blouse':`<path d="M28 28 L40 22 L40 30 L60 30 L60 22 L72 28 L70 50 L65 50 L65 85 L35 85 L35 50 L30 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Hoodie':`<path d="M25 35 L35 22 L40 30 L60 30 L65 22 L75 35 L72 90 L28 90 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><path d="M40 30 Q50 20 60 30" stroke="${s}" stroke-width="0.5" fill="none"/>`,
+    'Sweater':`<path d="M25 30 L40 25 L40 30 L60 30 L60 25 L75 30 L72 88 L28 88 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Tank Top':`<path d="M35 25 L40 25 L42 32 L58 32 L60 25 L65 25 L65 90 L35 90 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Jeans':`<path d="M35 20 L65 20 L67 50 L62 95 L52 95 L50 60 L48 60 L46 95 L36 95 L33 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Trousers':`<path d="M35 22 L65 22 L66 50 L60 92 L52 92 L50 55 L48 55 L46 92 L38 92 L34 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Shorts':`<path d="M35 25 L65 25 L66 40 L62 65 L52 65 L50 45 L48 45 L46 65 L36 65 L34 40 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Leggings':`<path d="M38 22 L62 22 L63 50 L58 95 L52 95 L51 55 L49 55 L48 95 L42 95 L37 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Track Pants':`<path d="M36 22 L64 22 L66 50 L60 92 L52 92 L50 55 L48 55 L46 92 L38 92 L34 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'One Piece':`<path d="M30 25 L40 22 L40 30 L60 30 L60 22 L70 25 L72 50 L78 95 L22 95 L28 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Maxi Dress':`<path d="M32 25 L40 22 L40 30 L60 30 L60 22 L68 25 L70 50 L82 95 L18 95 L30 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Midi Dress':`<path d="M30 25 L40 22 L40 30 L60 30 L60 22 L70 25 L72 45 L75 80 L25 80 L28 45 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Gown':`<path d="M30 22 L40 20 L40 30 L60 30 L60 20 L70 22 L72 50 L85 95 L15 95 L28 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Bra':`<path d="M18 45 Q32 38 36 52 Q36 62 24 62 L18 45 Z M82 45 Q68 38 64 52 Q64 62 76 62 L82 45 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Panties':`<path d="M28 35 L72 35 L70 55 Q60 70 50 65 Q40 70 30 55 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Boxers':`<path d="M30 30 L70 30 L72 60 L60 75 L52 60 L48 60 L40 75 L28 60 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Briefs':`<path d="M28 35 L72 35 L72 50 Q60 65 50 60 Q40 65 28 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Vest':`<path d="M35 25 L40 25 L42 32 L58 32 L60 25 L65 25 L65 75 L35 75 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Camisole':`<path d="M37 25 L42 25 L43 32 L57 32 L58 25 L63 25 L63 80 L37 80 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Pajamas':`<g><path d="M22 20 L35 17 L35 25 L55 25 L55 17 L68 20 L65 50 L25 50 Z" fill="${c}" stroke="${s}" stroke-width="0.7"/><path d="M30 55 L60 55 L62 75 L57 95 L50 95 L48 70 L46 70 L44 95 L37 95 L33 75 Z" fill="${c}" stroke="${s}" stroke-width="0.7"/></g>`,
+    'Night Suit':`<g><path d="M22 20 L35 17 L35 25 L55 25 L55 17 L68 20 L65 50 L25 50 Z" fill="${c}" stroke="${s}" stroke-width="0.7"/><path d="M30 55 L60 55 L62 75 L57 95 L50 95 L48 70 L46 70 L44 95 L37 95 L33 75 Z" fill="${c}" stroke="${s}" stroke-width="0.7"/></g>`,
+    'Nightie':`<path d="M32 25 L40 22 L40 30 L60 30 L60 22 L68 25 L72 50 L80 95 L20 95 L28 50 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Jacket':`<path d="M22 28 L38 22 L40 32 L60 32 L62 22 L78 28 L75 90 L25 90 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Coat':`<path d="M20 28 L38 22 L40 32 L60 32 L62 22 L80 28 L78 95 L22 95 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Blazer':`<path d="M22 28 L38 22 L42 35 L50 40 L58 35 L62 22 L78 28 L75 90 L25 90 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Cardigan':`<path d="M25 28 L38 22 L40 32 L60 32 L62 22 L75 28 L72 88 L28 88 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Shawl':`<path d="M15 35 Q50 25 85 35 L80 65 Q50 55 20 65 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Scarf':`<path d="M20 40 L80 40 L78 55 L22 55 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Belt':`<rect x="15" y="45" width="70" height="10" fill="${c}" stroke="${s}" stroke-width="${w}"/><rect x="58" y="42" width="12" height="16" fill="#C9A961" stroke="${s}" stroke-width="0.5"/>`,
+    'Tie':`<path d="M40 20 L60 20 L55 35 L62 80 L50 95 L38 80 L45 35 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Socks':`<path d="M35 20 L55 20 L55 60 Q55 75 70 75 L70 85 L40 85 Q30 85 30 70 L30 30 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Shoes':`<path d="M15 60 L25 50 L55 55 Q75 55 80 65 L80 75 L15 75 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Sandals':`<path d="M20 62 L78 62 L75 74 L25 74 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><path d="M30 62 L40 46 L60 46 L70 62" stroke="${s}" stroke-width="${w}" fill="none"/>`,
+    'Heels':`<path d="M20 60 L25 50 L60 55 L75 60 L75 70 L65 70 L20 70 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><line x1="65" y1="70" x2="68" y2="90" stroke="${s}" stroke-width="1"/>`,
+    'Sneakers':`<path d="M15 60 L30 48 L55 52 Q78 55 82 68 L82 75 L15 75 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Flats':`<path d="M18 60 L30 55 L70 58 L80 65 L80 72 L18 72 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Dhoti':`<path d="M25 25 L75 25 L78 60 L60 95 L40 95 L22 60 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/>`,
+    'Sherwani':`<path d="M28 25 L40 20 L40 30 L60 30 L60 20 L72 25 L75 95 L25 95 Z" fill="${c}" stroke="${s}" stroke-width="${w}"/><line x1="50" y1="30" x2="50" y2="95" stroke="${s}" stroke-width="0.5"/>`,
+  };
+  const shape = shapes[type] || `<rect x="25" y="25" width="50" height="65" fill="${c}" stroke="${s}" stroke-width="${w}" rx="3"/>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#F5F3EF"/>${shape}</svg>`)}`;
+};
+
+// ─── SETTINGS SUB-PAGES (proper React components with their own state) ─────────
+
+function ManageHomes({ houses, hCounts, onRename, onAdd, onDelete, onBack }) {
+  const [newName, setNewName] = useState('');
+  const handleAdd = () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    onAdd(trimmed);
+    setNewName('');
+  };
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:22}}>
+        <button onClick={onBack} style={{...btnReset,padding:4}}><ChevronLeft size={18} color="#a8a29e" strokeWidth={1.8}/></button>
+        <h2 className="serif" style={{margin:0,fontSize:18,fontWeight:600,color:'#1a1816'}}>Manage Homes</h2>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+        {houses.map((h, i) => (
+          <HomeRow key={i} index={i} value={h} count={hCounts[i]} canDelete={houses.length > 1}
+            onSave={(v) => onRename(i, v)} onDelete={() => onDelete(i)} />
+        ))}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <input
+          value={newName} onChange={e => setNewName(e.target.value)}
+          placeholder="New home name…"
+          onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
+          style={{flex:1,padding:'10px 12px',background:CARD,border:'1px solid rgba(44,42,38,0.12)',borderRadius:10,fontSize:13,color:'#1a1816',outline:'none',fontFamily:"'Inter',system-ui"}}
+        />
+        <button onClick={handleAdd} style={{...btnReset,background:GOLD,color:'#fff',padding:'10px 16px',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ManageCategories({ categories, catCounts, onAddCat, onRemoveCat, onSelectCat, onBack }) {
+  const [newName, setNewName] = useState('');
+  const handleAdd = () => {
+    const trimmed = newName.trim();
+    if (!trimmed || categories[trimmed]) return;
+    onAddCat(trimmed);
+    setNewName('');
+  };
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:22}}>
+        <button onClick={onBack} style={{...btnReset,padding:4}}><ChevronLeft size={18} color="#a8a29e" strokeWidth={1.8}/></button>
+        <h2 className="serif" style={{margin:0,fontSize:18,fontWeight:600,color:'#1a1816'}}>Categories & Types</h2>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16}}>
+        {Object.keys(categories).map(cat => (
+          <div key={cat} style={{display:'flex',alignItems:'center',background:CARD,borderRadius:12,padding:'11px 14px',border:'1px solid rgba(44,42,38,0.07)'}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:500,color:'#1a1816'}}>{cat}</div>
+              <div style={{fontSize:11,color:'#a8a29e',marginTop:2}}>{(categories[cat]||[]).length} types · {catCounts[cat]||0} items</div>
+            </div>
+            <button onClick={() => onSelectCat(cat)} style={{...btnReset,padding:'4px 6px'}}>
+              <ChevronRight size={15} color="#c4b8a8" strokeWidth={1.8}/>
+            </button>
+            <button onClick={() => onRemoveCat(cat)} style={{...btnReset,padding:'4px 4px',marginLeft:2}}>
+              <Trash2 size={13} color="#dac8b8" strokeWidth={1.8}/>
+            </button>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <input
+          value={newName} onChange={e => setNewName(e.target.value)}
+          placeholder="New category name…"
+          onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
+          style={{flex:1,padding:'10px 12px',background:CARD,border:'1px solid rgba(44,42,38,0.12)',borderRadius:10,fontSize:13,color:'#1a1816',outline:'none',fontFamily:"'Inter',system-ui"}}
+        />
+        <button onClick={handleAdd} style={{...btnReset,background:GOLD,color:'#fff',padding:'10px 16px',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CategoryDetail({ catName, types, onRename, onAddType, onRemoveType, onBack }) {
+  const [newType, setNewType] = useState('');
+  const [editName, setEditName] = useState(catName);
+  const handleAddType = () => {
+    const t = newType.trim();
+    if (!t || types.includes(t)) return;
+    onAddType(t);
+    setNewType('');
+  };
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:22}}>
+        <button onClick={onBack} style={{...btnReset,padding:4}}><ChevronLeft size={18} color="#a8a29e" strokeWidth={1.8}/></button>
+        <h2 className="serif" style={{margin:0,fontSize:18,fontWeight:600,color:'#1a1816'}}>Edit Category</h2>
+      </div>
+      <div style={{marginBottom:20}}>
+        <span style={labelStyle}>Category Name</span>
+        <div style={{display:'flex',gap:8}}>
+          <input value={editName} onChange={e => setEditName(e.target.value)}
+            style={{flex:1,padding:'10px 12px',background:CARD,border:'1px solid rgba(44,42,38,0.12)',borderRadius:10,fontSize:13,color:'#1a1816',outline:'none',fontFamily:"'Inter',system-ui"}}/>
+          <button onClick={() => onRename(catName, editName.trim())}
+            style={{...btnReset,background:'#1a1816',color:'#f5f3ef',padding:'10px 14px',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+            Save
+          </button>
+        </div>
+      </div>
+      <span style={labelStyle}>Types</span>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+        {types.length === 0 && <div style={{fontSize:12,color:'#a8a29e',padding:'8px 0'}}>No types yet — add one below.</div>}
+        {types.map(t => (
+          <div key={t} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 12px',background:CARD,borderRadius:10,border:'1px solid rgba(44,42,38,0.07)'}}>
+            <span style={{fontSize:13,color:'#1a1816'}}>{t}</span>
+            <button onClick={() => onRemoveType(t)} style={{...btnReset,padding:4}}>
+              <X size={13} color="#c4b8a8" strokeWidth={2}/>
+            </button>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <input value={newType} onChange={e => setNewType(e.target.value)}
+          placeholder="Add new type…"
+          onKeyDown={e => { if (e.key === 'Enter') handleAddType(); }}
+          style={{flex:1,padding:'10px 12px',background:CARD,border:'1px solid rgba(44,42,38,0.12)',borderRadius:10,fontSize:13,color:'#1a1816',outline:'none',fontFamily:"'Inter',system-ui"}}/>
+        <button onClick={handleAddType} style={{...btnReset,background:GOLD,color:'#fff',padding:'10px 16px',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer'}}>
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HomeRow({ index, value, count, canDelete, onSave, onDelete }) {
+  const [v, setV] = useState(value);
+  useEffect(() => setV(value), [value]);
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:CARD,borderRadius:12,border:'1px solid rgba(44,42,38,0.07)'}}>
+      <input value={v} onChange={e => setV(e.target.value)} onBlur={() => v.trim() && onSave(v.trim())}
+        onKeyDown={e => { if (e.key === 'Enter' && v.trim()) onSave(v.trim()); }}
+        style={{flex:1,border:'none',outline:'none',fontSize:13,color:'#1a1816',background:'transparent',fontFamily:"'Inter',system-ui"}}/>
+      <span style={{fontSize:10,color:'#a8a29e',fontWeight:500,whiteSpace:'nowrap'}}>{count} items</span>
+      {canDelete && (
+        <button onClick={onDelete} style={{...btnReset,padding:2}}>
+          <Trash2 size={13} color="#dac8b8" strokeWidth={1.8}/>
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function WardrobeTracker() {
+  const [session, setSession]           = useState(null);  // null = not checked yet
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [clothes, setClothes]           = useState([]);
+  const [houses, setHouses]             = useState(DEFAULT_HOUSES);
+  const [categories, setCategories]     = useState(DEFAULT_CATEGORIES);
+  const [profile, setProfile]           = useState({ name:'' });
+  const [favorites, setFavorites]       = useState({});
+  const [loading, setLoading]           = useState(true);
+
+  const [activeHouse, setActiveHouse] = useState(null);
+  const [filterCat, setFilterCat]     = useState('all');
+  const [searchTerm, setSearchTerm]   = useState('');
+  const [viewMode, setViewMode]       = useState('grid');
+  const lastTap = useRef({});
+
+  const [showAddModal, setShowAddModal]     = useState(false);
+  const [editingItem, setEditingItem]       = useState(null);
+  const [movingItem, setMovingItem]         = useState(null);
+  const [showSettings, setShowSettings]     = useState(false);
+  const [settingsPage, setSettingsPage]     = useState('main');
+  const [activeCatEdit, setActiveCatEdit]   = useState(null);
+
+  const [form, setForm]             = useState({ name:'', category:'Tops', subType:'', color:'', house:0, photo:'' });
+  const [analyzing, setAnalyzing]   = useState(false);
+  const [analyzeError, setAnalyzeError] = useState('');
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    // Check for existing session first
+    try {
+      const s = localStorage.getItem('wt-session');
+      if (s) setSession(JSON.parse(s));
+    } catch(e) {}
+    setSessionChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (sessionChecked && session) loadAll();
+    else if (sessionChecked && !session) setLoading(false);
+  }, [sessionChecked, session]);
+
+  const loadAll = async () => {
+    const load = (key, setter) => {
+      try { const v = localStorage.getItem(key); if (v) setter(JSON.parse(v)); } catch(e) {}
+    };
+    await load('wt2-clothes', setClothes);
+    await load('wt2-houses', setHouses);
+    await load('wt2-categories', setCategories);
+    await load('wt2-profile', setProfile);
+    await load('wt2-favs', setFavorites);
+    setLoading(false);
+  };
+
+  const persist = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} };
+  const saveClothes    = v => { setClothes(v);    persist('wt2-clothes', v); };
+  const saveHouses     = v => { setHouses(v);     persist('wt2-houses', v); };
+  const saveCategories = v => { setCategories(v); persist('wt2-categories', v); };
+  const saveProfile    = v => { setProfile(v);    persist('wt2-profile', v); };
+  const saveFavs       = v => { setFavorites(v);  persist('wt2-favs', v); };
+
+  const handleAuth = (user) => {
+    setSession(user);
+    saveProfile({ name: user.name });
+  };
+
+  const handleSignOut = () => {
+    try { localStorage.removeItem('wt-session'); } catch(e) {}
+    setSession(null);
+    setShowSettings(false);
+    // Reset in-memory state so next sign-in starts fresh
+    setClothes([]); setHouses(DEFAULT_HOUSES); setCategories(DEFAULT_CATEGORIES);
+    setProfile({ name:'' }); setFavorites({});
+  };
+
+  const seedData = () => {
+    const items = SEEDS.map((d, i) => ({
+      id: `s-${Date.now()}-${i}`, ...d,
+      photo: makeClothSvg(d.subType, d.color),
+      addedAt: new Date().toISOString(),
+    }));
+    saveClothes(items);
+  };
+
+  // Double-tap to clear home filter
+  const handleHomeCardClick = (idx) => {
+    const now = Date.now();
+    const last = lastTap.current[idx] || 0;
+    if (now - last < 380) {
+      setActiveHouse(null);
+      lastTap.current[idx] = 0;
+    } else {
+      lastTap.current[idx] = now;
+      setActiveHouse(activeHouse === idx ? null : idx);
+    }
+  };
+
+  // Photo + AI
+  const fileToBase64 = (file) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res({ base64: r.result.split(',')[1], mediaType: r.result.split(';')[0].split(':')[1], dataUrl: r.result });
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setAnalyzing(true); setAnalyzeError('');
+    try {
+      const { base64, mediaType, dataUrl } = await fileToBase64(file);
+      setForm(p => ({ ...p, photo: dataUrl }));
+      const catList = Object.keys(categories);
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: `Identify clothing item. Return ONLY JSON:\n{"name":"Title Case max 4 words","category":"one of: ${catList.join(', ')}","subType":"from ${JSON.stringify(categories)}","color":"primary color"}` }
+          ]}],
+        }),
+      });
+      const data = await resp.json();
+      const raw = data.content.map(c => c.type === 'text' ? c.text : '').join('').replace(/```json|```/g, '').trim();
+      const p = JSON.parse(raw);
+      const vc = catList.includes(p.category) ? p.category : 'Other';
+      const vt = (categories[vc] || []).includes(p.subType) ? p.subType : '';
+      setForm(prev => ({ ...prev, name: p.name || prev.name, category: vc, subType: vt, color: p.color || prev.color }));
+    } catch { setAnalyzeError('Could not auto-fill — please fill manually.'); }
+    finally { setAnalyzing(false); }
+  };
+
+  const openAdd = () => {
+    setForm({ name: '', category: Object.keys(categories)[0] || 'Other', subType: '', color: '', house: activeHouse ?? 0, photo: '' });
+    setEditingItem(null); setAnalyzeError('');
+    setShowAddModal(true);
+  };
+
+  const openEdit = (item) => {
+    setForm({ name: item.name, category: item.category, subType: item.subType, color: item.color, house: item.house, photo: item.photo });
+    setEditingItem(item); setAnalyzeError('');
+    setShowAddModal(true);
+  };
+
+  const handleSave = () => {
+    if (!form.name.trim()) return;
+    const photo = form.photo || (form.subType ? makeClothSvg(form.subType, form.color) : '');
+    if (editingItem) {
+      saveClothes(clothes.map(c => c.id === editingItem.id ? { ...c, ...form, photo } : c));
+    } else {
+      saveClothes([...clothes, { id: Date.now().toString(), ...form, photo, addedAt: new Date().toISOString() }]);
+    }
+    setShowAddModal(false);
+  };
+
+  const handleDelete  = (id) => saveClothes(clothes.filter(c => c.id !== id));
+  const handleMove    = (id, idx) => { saveClothes(clothes.map(c => c.id === id ? { ...c, house: idx } : c)); setMovingItem(null); };
+  const toggleFav     = (id) => { const u = { ...favorites, [id]: !favorites[id] }; saveFavs(u); };
+
+  // Home management
+  const addHome    = (name) => saveHouses([...houses, name]);
+  const removeHome = (idx) => {
+    if (houses.length <= 1) return;
+    saveClothes(clothes.map(c => c.house === idx ? { ...c, house: 0 } : c.house > idx ? { ...c, house: c.house - 1 } : c));
+    saveHouses(houses.filter((_, i) => i !== idx));
+    if (activeHouse === idx) setActiveHouse(null);
+  };
+  const renameHome = (idx, v) => { const u = [...houses]; u[idx] = v; saveHouses(u); };
+
+  // Category management
+  const addCategory    = (name) => { if (!name || categories[name]) return; saveCategories({ ...categories, [name]: [] }); };
+  const removeCategory = (name) => {
+    const u = { ...categories }; delete u[name];
+    saveCategories(u);
+    if (filterCat === name) setFilterCat('all');
+  };
+  const renameCategory = (oldName, newName) => {
+    if (!newName || newName === oldName) return;
+    const u = {};
+    Object.keys(categories).forEach(k => { u[k === oldName ? newName : k] = categories[k]; });
+    saveCategories(u);
+    setActiveCatEdit(newName);
+  };
+  const addType    = (cat, type) => { if (!type || (categories[cat] || []).includes(type)) return; saveCategories({ ...categories, [cat]: [...(categories[cat] || []), type] }); };
+  const removeType = (cat, type) => { saveCategories({ ...categories, [cat]: (categories[cat] || []).filter(t => t !== type) }); };
+
+  const filtered = clothes.filter(c => {
+    if (activeHouse !== null && c.house !== activeHouse) return false;
+    if (filterCat !== 'all' && c.category !== filterCat) return false;
+    if (searchTerm) {
+      const t = searchTerm.toLowerCase();
+      return c.name.toLowerCase().includes(t) || c.subType.toLowerCase().includes(t) || c.color.toLowerCase().includes(t);
+    }
+    return true;
+  });
+
+  const hCounts   = houses.map((_, i) => clothes.filter(c => c.house === i).length);
+  const catCounts = Object.keys(categories).reduce((a, k) => ({ ...a, [k]: clothes.filter(c => (activeHouse === null || c.house === activeHouse) && c.category === k).length }), {});
+  const mainTabs  = ['all', ...Object.keys(categories).slice(0, 4)];
+  const initials = profile.name
+    ? profile.name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'ME';
+
+  if (!sessionChecked) return null; // tiny flash before check completes
+  if (!session) return <AuthScreen onAuth={handleAuth} />;
+
+  if (loading) return (
+    <div style={{ minHeight:'100vh', background:CREAM, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <span style={{ color:'#a8a29e', fontSize:14 }}>Loading wardrobe…</span>
+    </div>
+  );
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600&display=swap');
+        *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+        body{margin:0;background:#FAF7F2;font-family:'Inter',system-ui,sans-serif;}
+        .serif{font-family:'Fraunces',Georgia,serif;}
+        .fade-up{animation:fu .3s ease both;}
+        @keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        .hs::-webkit-scrollbar{display:none;}.hs{scrollbar-width:none;}
+        select,input,button,textarea{font-family:'Inter',system-ui,sans-serif;}
+      `}</style>
+
+      <div style={{ minHeight:'100vh', background:CREAM, paddingBottom:110, color:'#2c2a26' }}>
+
+        {/* ── HEADER ── */}
+        <div style={{ background:CREAM, position:'sticky', top:0, zIndex:20, borderBottom:'1px solid rgba(44,42,38,0.06)' }}>
+          <div style={{ maxWidth:560, margin:'0 auto', padding:'18px 20px 0' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <button style={{ ...btnReset, padding:4 }}><Menu size={20} color="#2c2a26" strokeWidth={1.6}/></button>
+              <button onClick={() => { setShowSettings(true); setSettingsPage('main'); }}
+                style={{ ...btnReset, width:34, height:34, borderRadius:'50%', background:'#1a1816', flexShrink:0 }}>
+                <span style={{ fontSize:11, fontWeight:600, color:'#f5f3ef', fontFamily:"'Fraunces',Georgia,serif", letterSpacing:'0.03em' }}>{initials}</span>
+              </button>
+            </div>
+            <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', paddingBottom:14 }}>
+              <div>
+                <h1 className="serif" style={{ fontSize:36, fontWeight:600, margin:0, lineHeight:1, letterSpacing:'-0.4px', color:'#1a1816' }}>Wardrobe</h1>
+                <p style={{ fontSize:11, color:'#a8a29e', margin:'5px 0 0', fontWeight:500 }}>
+                  {clothes.length} items · {houses.length} homes
+                  {activeHouse !== null && <span style={{ color:GOLD }}> · {houses[activeHouse]}</span>}
+                </p>
+              </div>
+              <button onClick={openAdd} style={{ ...btnReset, gap:5, fontSize:13, fontWeight:500, color:'#2c2a26', padding:'6px 0', cursor:'pointer' }}>
+                <Plus size={16} strokeWidth={2}/> Add New
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ maxWidth:560, margin:'0 auto', padding:'16px 20px 0' }}>
+
+          {/* ── SEED BANNER ── */}
+          {clothes.length === 0 && (
+            <div className="fade-up" style={{ background:CARD, borderRadius:18, padding:'15px 18px', marginBottom:16, boxShadow:'0 1px 6px rgba(44,42,38,0.07)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+                <div>
+                  <div className="serif" style={{ fontSize:16, fontWeight:600, color:'#1a1816' }}>Get started</div>
+                  <div style={{ fontSize:11, color:'#a8a29e', marginTop:3 }}>Load 10 sample items across all 3 homes.</div>
+                </div>
+                <button onClick={seedData} style={{ ...btnReset, background:GOLD, color:'#fff', borderRadius:10, padding:'9px 14px', fontSize:12, fontWeight:600, whiteSpace:'nowrap', cursor:'pointer' }}>
+                  Load Samples
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── HOME CARDS — horizontal scroll so they never wrap ── */}
+          <div style={{ display:'flex', gap:8, overflowX:'auto', marginBottom:14, paddingBottom:2 }} className="hs">
+            {houses.map((h, i) => {
+              const active = activeHouse === i;
+              const emojis = ['🏠','🌸','💜','🏡','✨','🌿'];
+              return (
+                <button key={i} onClick={() => handleHomeCardClick(i)} style={{
+                  ...btnReset, flexShrink:0, minWidth:110, textAlign:'left',
+                  padding:'12px 14px 11px', borderRadius:16, cursor:'pointer',
+                  background: active ? '#1a1816' : CARD,
+                  boxShadow: active ? '0 2px 10px rgba(26,24,22,0.18)' : '0 1px 4px rgba(44,42,38,0.07)',
+                  transition:'all .2s', display:'flex', flexDirection:'column', alignItems:'flex-start',
+                }}>
+                  <div style={{ fontSize:9, letterSpacing:'0.1em', fontWeight:600, textTransform:'uppercase', color: active ? '#6b6560' : '#c4b8a8', marginBottom:5 }}>
+                    {emojis[i % emojis.length]} Home {i + 1}
+                  </div>
+                  <div style={{ fontSize:11, fontWeight:500, color: active ? '#f5f3ef' : '#5c5652', marginBottom:9, maxWidth:88, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{h}</div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:2 }}>
+                    <span className="serif" style={{ fontSize:26, fontWeight:600, lineHeight:1, color: active ? '#f5f3ef' : '#1a1816' }}>{hCounts[i]}</span>
+                    <span style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.06em', color: active ? '#6b6560' : '#c4b8a8' }}>items</span>
+                  </div>
+                  {active && <div style={{ fontSize:8, color:'#6b6560', marginTop:5, letterSpacing:'0.04em' }}>double-tap to clear</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── TAB BAR ── */}
+          <div style={{ display:'flex', borderBottom:'1.5px solid rgba(44,42,38,0.08)', marginBottom:12, overflowX:'auto' }} className="hs">
+            {mainTabs.map(tab => {
+              const active = filterCat === tab || (tab === 'all' && filterCat === 'all');
+              return (
+                <button key={tab} onClick={() => setFilterCat(tab)} style={{
+                  ...btnReset, paddingBottom:11, paddingTop:2, paddingRight:14, paddingLeft:2,
+                  fontSize:13, fontWeight: active ? 600 : 400, color: active ? '#1a1816' : '#a8a29e',
+                  position:'relative', whiteSpace:'nowrap', cursor:'pointer', transition:'color .15s',
+                }}>
+                  {tab === 'all' ? 'All' : tab}
+                  {active && <div style={{ position:'absolute', bottom:0, left:2, right:14, height:2, background:GOLD, borderRadius:2 }}/>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── EXTRA CATEGORY PILLS ── */}
+          {Object.keys(catCounts).some(k => catCounts[k] > 0 && !mainTabs.includes(k)) && (
+            <div style={{ display:'flex', gap:6, overflowX:'auto', marginBottom:12, paddingBottom:2 }} className="hs">
+              {Object.keys(categories).map(cat => {
+                if (!catCounts[cat] || mainTabs.includes(cat)) return null;
+                const active = filterCat === cat;
+                return (
+                  <button key={cat} onClick={() => setFilterCat(cat)} style={{
+                    ...btnReset, padding:'5px 12px', borderRadius:20, fontSize:11, fontWeight:500,
+                    whiteSpace:'nowrap', cursor:'pointer',
+                    background: active ? '#1a1816' : CARD, color: active ? '#f5f3ef' : '#5c5652',
+                    border:`1px solid ${active ? '#1a1816' : 'rgba(44,42,38,0.12)'}`, transition:'all .15s',
+                  }}>
+                    {cat} <span style={{ opacity:.5 }}>{catCounts[cat]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── SEARCH + VIEW TOGGLE ── */}
+          <div style={{ display:'flex', gap:8, marginBottom:16, alignItems:'center' }}>
+            <div style={{ position:'relative', flex:1 }}>
+              <Search size={13} color="#a8a29e" strokeWidth={1.8} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)' }}/>
+              <input type="text" placeholder="Search wardrobe" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                style={{ width:'100%', paddingLeft:34, paddingRight:10, paddingTop:9, paddingBottom:9, background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:11, fontSize:13, color:'#2c2a26', outline:'none', boxSizing:'border-box' }}/>
+            </div>
+            <div style={{ display:'flex', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:11, padding:3, gap:1 }}>
+              <button onClick={() => setViewMode('grid')} style={{ ...btnReset, background: viewMode==='grid' ? GOLD : 'none', borderRadius:8, padding:'6px 8px', cursor:'pointer', transition:'background .15s' }}>
+                <LayoutGrid size={13} color={viewMode==='grid' ? '#fff' : '#a8a29e'} strokeWidth={1.8}/>
+              </button>
+              <button onClick={() => setViewMode('list')} style={{ ...btnReset, background: viewMode==='list' ? GOLD : 'none', borderRadius:8, padding:'6px 8px', cursor:'pointer', transition:'background .15s' }}>
+                <List size={13} color={viewMode==='list' ? '#fff' : '#a8a29e'} strokeWidth={1.8}/>
+              </button>
+            </div>
+          </div>
+
+          {/* ── SECTION HEADER ── */}
+          {filtered.length > 0 && (
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:12 }}>
+              <h2 className="serif" style={{ fontSize:20, fontWeight:600, margin:0, color:'#1a1816' }}>
+                {activeHouse !== null ? houses[activeHouse] : filterCat === 'all' ? 'All Items' : filterCat}
+              </h2>
+              <span style={{ fontSize:11, color:'#a8a29e', fontWeight:500 }}>{filtered.length} items</span>
+            </div>
+          )}
+
+          {/* ── EMPTY ── */}
+          {filtered.length === 0 ? (
+            <div style={{ background:CARD, borderRadius:18, padding:'40px 24px', textAlign:'center', boxShadow:'0 1px 4px rgba(44,42,38,0.06)' }}>
+              <div style={{ width:40, height:40, background:'#f5f3ef', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px' }}>
+                <Tag size={16} color="#d4c8bc" strokeWidth={1.5}/>
+              </div>
+              <div className="serif" style={{ fontSize:15, color:'#5c5652', fontWeight:500 }}>
+                {clothes.length === 0 ? 'Your wardrobe is empty' : 'No items found'}
+              </div>
+              <div style={{ fontSize:11, color:'#a8a29e', marginTop:3 }}>
+                {clothes.length === 0 ? 'Tap "Add New" to begin' : 'Try a different filter'}
+              </div>
+            </div>
+
+          /* ── GRID ── */
+          ) : viewMode === 'grid' ? (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }} className="fade-up">
+              {filtered.map(item => (
+                <div key={item.id} style={{ background:CARD, borderRadius:18, overflow:'hidden', boxShadow:'0 1px 5px rgba(44,42,38,0.07)' }}>
+                  <div style={{ position:'relative', aspectRatio:'3/4', background:'#F5F3EF' }}>
+                    <img src={item.photo} alt={item.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
+                    <button onClick={() => toggleFav(item.id)} style={{ ...btnReset, position:'absolute', top:9, left:9, width:28, height:28, background:'rgba(255,255,255,0.85)', backdropFilter:'blur(4px)', borderRadius:'50%', cursor:'pointer' }}>
+                      <Heart size={12} strokeWidth={1.8} fill={favorites[item.id] ? '#E04A6B' : 'none'} color={favorites[item.id] ? '#E04A6B' : '#78716c'}/>
+                    </button>
+                    <button onClick={() => openEdit(item)} style={{ ...btnReset, position:'absolute', top:9, right:9, width:28, height:28, background:'rgba(255,255,255,0.85)', backdropFilter:'blur(4px)', borderRadius:'50%', cursor:'pointer' }}>
+                      <Pencil size={11} color="#78716c" strokeWidth={1.8}/>
+                    </button>
+                    <div style={{ position:'absolute', bottom:9, left:9, right:9 }}>
+                      <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(6px)', borderRadius:7, padding:'3px 8px', display:'inline-block' }}>
+                        <span style={{ fontSize:9, fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:'#5c5652' }}>{houses[item.house]}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ padding:'10px 10px 8px' }}>
+                    <div style={{ fontSize:12, fontWeight:500, color:'#1a1816', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{item.name}</div>
+                    <div style={{ fontSize:10, color:'#a8a29e', marginTop:1 }}>{item.subType || item.category}{item.color && ` · ${item.color}`}</div>
+                    <div style={{ display:'flex', alignItems:'center', marginTop:8, paddingTop:7, borderTop:'1px solid #f5f1ec' }}>
+                      <button onClick={() => setMovingItem(item)} style={{ ...btnReset, flex:1, fontSize:10, fontWeight:500, color:'#78716c', padding:'1px 0', cursor:'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.color='#1a1816'} onMouseLeave={e => e.currentTarget.style.color='#78716c'}>Move</button>
+                      <div style={{ width:1, height:10, background:'#f0ece8' }}/>
+                      <button onClick={() => handleDelete(item.id)} style={{ ...btnReset, flex:1, fontSize:10, fontWeight:500, color:'#78716c', padding:'1px 0', cursor:'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.color='#c0392b'} onMouseLeave={e => e.currentTarget.style.color='#78716c'}>Remove</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          /* ── LIST ── */
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:7 }} className="fade-up">
+              {filtered.map(item => (
+                <div key={item.id} style={{ background:CARD, borderRadius:14, padding:'10px 12px', display:'flex', alignItems:'center', gap:11, boxShadow:'0 1px 4px rgba(44,42,38,0.06)' }}>
+                  <img src={item.photo} alt={item.name} style={{ width:54, height:54, borderRadius:10, objectFit:'cover', background:'#F5F3EF', flexShrink:0 }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:500, color:'#1a1816', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{item.name}</div>
+                    <div style={{ fontSize:10, color:'#a8a29e', marginTop:1 }}>{item.subType}{item.color && ` · ${item.color}`}</div>
+                    <div style={{ fontSize:9, color:GOLD, fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase', marginTop:4 }}>{houses[item.house]}</div>
+                  </div>
+                  <button onClick={() => toggleFav(item.id)} style={{ ...btnReset, padding:4, cursor:'pointer' }}>
+                    <Heart size={14} strokeWidth={1.8} fill={favorites[item.id] ? '#E04A6B' : 'none'} color={favorites[item.id] ? '#E04A6B' : '#c4b8a8'}/>
+                  </button>
+                  <button onClick={() => openEdit(item)} style={{ ...btnReset, padding:4, cursor:'pointer' }}>
+                    <Pencil size={13} color="#c4b8a8" strokeWidth={1.8}/>
+                  </button>
+                  <button onClick={() => setMovingItem(item)} style={{ ...btnReset, padding:4, cursor:'pointer' }}>
+                    <ArrowRightLeft size={13} color="#c4b8a8" strokeWidth={1.8}/>
+                  </button>
+                  <button onClick={() => handleDelete(item.id)} style={{ ...btnReset, padding:4, cursor:'pointer' }}>
+                    <Trash2 size={13} color="#c4b8a8" strokeWidth={1.8}/>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── FAB ── */}
+        <button onClick={openAdd} style={{ position:'fixed', bottom:24, right:24, width:50, height:50, borderRadius:'50%', background:'#1a1816', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 18px rgba(26,24,22,0.22)', zIndex:30, transition:'transform .15s' }}
+          onMouseEnter={e => e.currentTarget.style.transform='scale(1.07)'}
+          onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
+          <Plus size={20} color="#f5f3ef" strokeWidth={1.8}/>
+        </button>
+
+        {/* ══ ADD / EDIT MODAL ══ */}
+        {showAddModal && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(26,24,22,0.42)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:40 }}>
+            <div style={{ background:CREAM, width:'100%', maxWidth:560, borderRadius:'26px 26px 0 0', padding:'22px 22px 30px', maxHeight:'92vh', overflowY:'auto' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+                <button onClick={() => setShowAddModal(false)} style={{ ...btnReset, padding:4, cursor:'pointer' }}><ChevronLeft size={18} color="#a8a29e" strokeWidth={1.8}/></button>
+                <h2 className="serif" style={{ margin:0, fontSize:18, fontWeight:600, color:'#1a1816' }}>{editingItem ? 'Edit Item' : 'New Item'}</h2>
+                <div style={{ width:26 }}/>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                {/* PHOTO */}
+                <div>
+                  <span style={labelStyle}>Photo</span>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display:'none' }}/>
+                  <button onClick={() => fileInputRef.current?.click()} disabled={analyzing}
+                    style={{ ...btnReset, width:'100%', background:CARD, border:'1.5px dashed rgba(44,42,38,0.14)', borderRadius:14, padding:12, cursor:'pointer', boxSizing:'border-box' }}>
+                    {form.photo ? (
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <img src={form.photo} alt="" style={{ width:52, height:52, borderRadius:10, objectFit:'cover' }}/>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:500, color:'#1a1816' }}>{analyzing ? 'Analysing…' : 'Photo added'}</div>
+                          <div style={{ fontSize:11, color:'#a8a29e', marginTop:2 }}>Tap to change</div>
+                        </div>
+                        {analyzing && <Sparkles size={15} color={GOLD} style={{ marginLeft:'auto' }}/>}
+                      </div>
+                    ) : (
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'10px 0' }}>
+                        {analyzing
+                          ? <><Sparkles size={13} color={GOLD}/><span style={{ fontSize:13, color:'#5c5652' }}>Analysing…</span></>
+                          : <><Camera size={13} color="#a8a29e" strokeWidth={1.8}/><span style={{ fontSize:13, color:'#5c5652' }}>Add photo</span><span style={{ fontSize:11, color:GOLD, fontWeight:500 }}>· AI auto-fill</span></>
+                        }
+                      </div>
+                    )}
+                  </button>
+                  {analyzeError && <div style={{ fontSize:11, color:'#c0392b', marginTop:5 }}>{analyzeError}</div>}
+                </div>
+                {/* NAME */}
+                <div>
+                  <span style={labelStyle}>Item Name</span>
+                  <input value={form.name} onChange={e => setForm(p => ({ ...p, name:e.target.value }))} placeholder="Blue Cotton Kurta"
+                    style={{ width:'100%', padding:'10px 12px', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:10, fontSize:13, color:'#1a1816', outline:'none', boxSizing:'border-box' }}/>
+                </div>
+                {/* CAT + TYPE */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div>
+                    <span style={labelStyle}>Category</span>
+                    <select value={form.category} onChange={e => setForm(p => ({ ...p, category:e.target.value, subType:'' }))}
+                      style={{ width:'100%', padding:'10px', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:10, fontSize:12, color:'#1a1816', outline:'none', appearance:'none' }}>
+                      {Object.keys(categories).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <span style={labelStyle}>Type</span>
+                    <select value={form.subType} onChange={e => setForm(p => ({ ...p, subType:e.target.value }))}
+                      style={{ width:'100%', padding:'10px', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:10, fontSize:12, color:'#1a1816', outline:'none', appearance:'none' }}>
+                      <option value="">Select</option>
+                      {(categories[form.category] || []).map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+                {/* COLOR */}
+                <div>
+                  <span style={labelStyle}>Color</span>
+                  <input value={form.color} onChange={e => setForm(p => ({ ...p, color:e.target.value }))} placeholder="Navy blue"
+                    style={{ width:'100%', padding:'10px 12px', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:10, fontSize:13, color:'#1a1816', outline:'none', boxSizing:'border-box' }}/>
+                </div>
+                {/* LOCATION */}
+                <div>
+                  <span style={labelStyle}>Location</span>
+                  <div style={{ display:'flex', gap:7, overflowX:'auto', paddingBottom:2 }} className="hs">
+                    {houses.map((h, i) => (
+                      <button key={i} onClick={() => setForm(p => ({ ...p, house:i }))} style={{
+                        ...btnReset, flexShrink:0, padding:'9px 12px', borderRadius:11, cursor:'pointer',
+                        background: form.house === i ? '#1a1816' : CARD,
+                        border: form.house === i ? 'none' : '1px solid rgba(44,42,38,0.1)',
+                        flexDirection:'column', alignItems:'flex-start', transition:'all .15s',
+                      }}>
+                        <div style={{ fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color: form.house===i ? '#6b6560' : '#a8a29e', marginBottom:2 }}>Home {i+1}</div>
+                        <div style={{ fontSize:11, fontWeight:500, color: form.house===i ? '#f5f3ef' : '#5c5652' }}>{h}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={handleSave} disabled={!form.name.trim() || analyzing}
+                  style={{ ...btnReset, background: form.name.trim() && !analyzing ? GOLD : '#d6cfc6', color:'#fff', borderRadius:12, padding:'14px', fontSize:13, fontWeight:600, letterSpacing:'0.03em', marginTop:4, cursor:'pointer', width:'100%', justifyContent:'center', transition:'background .15s' }}>
+                  {editingItem ? 'Save Changes' : 'Save Item'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ MOVE MODAL ══ */}
+        {movingItem && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(26,24,22,0.42)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:40 }}>
+            <div style={{ background:CREAM, width:'100%', maxWidth:560, borderRadius:'26px 26px 0 0', padding:'22px 22px 30px' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+                <button onClick={() => setMovingItem(null)} style={{ ...btnReset, padding:4, cursor:'pointer' }}><ChevronLeft size={18} color="#a8a29e" strokeWidth={1.8}/></button>
+                <h2 className="serif" style={{ margin:0, fontSize:18, fontWeight:600, color:'#1a1816' }}>Move Item</h2>
+                <div style={{ width:26 }}/>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:14, padding:'10px 12px', background:CARD, borderRadius:14 }}>
+                {movingItem.photo && <img src={movingItem.photo} alt="" style={{ width:46, height:46, borderRadius:9, objectFit:'cover' }}/>}
+                <div>
+                  <div style={{ fontSize:13, fontWeight:500, color:'#1a1816' }}>{movingItem.name}</div>
+                  <div style={{ fontSize:10, color:'#a8a29e', marginTop:1 }}>Currently at {houses[movingItem.house]}</div>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                {houses.map((h, i) => {
+                  const cur = i === movingItem.house;
+                  return (
+                    <button key={i} onClick={() => handleMove(movingItem.id, i)} disabled={cur}
+                      style={{ ...btnReset, padding:'13px 14px', borderRadius:13, background: cur ? '#f0ece8' : CARD, opacity: cur ? .55 : 1, cursor: cur ? 'not-allowed' : 'pointer', boxShadow: cur ? 'none' : '0 1px 4px rgba(44,42,38,0.06)', textAlign:'left', transition:'all .15s', width:'100%', justifyContent:'space-between', flexDirection:'row' }}>
+                      <div>
+                        <div style={{ fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:'#a8a29e', marginBottom:2 }}>Home {i+1}</div>
+                        <div style={{ fontSize:13, fontWeight:500, color:'#1a1816' }}>{h}</div>
+                        <div style={{ fontSize:10, color:'#a8a29e', marginTop:1 }}>{hCounts[i]} items</div>
+                      </div>
+                      {cur && <span style={{ fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', color:'#a8a29e' }}>Current</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ SETTINGS PANEL ══ */}
+        {showSettings && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(26,24,22,0.42)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:50 }}>
+            <div style={{ background:CREAM, width:'100%', maxWidth:560, borderRadius:'26px 26px 0 0', padding:'22px 22px 34px', maxHeight:'90vh', overflowY:'auto' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <Settings size={15} color="#a8a29e" strokeWidth={1.8}/>
+                  <h2 className="serif" style={{ margin:0, fontSize:18, fontWeight:600, color:'#1a1816' }}>Profile & Settings</h2>
+                </div>
+                <button onClick={() => setShowSettings(false)} style={{ ...btnReset, width:28, height:28, background:CARD, borderRadius:'50%', border:'1px solid rgba(44,42,38,0.1)', cursor:'pointer' }}>
+                  <X size={13} color="#a8a29e" strokeWidth={2}/>
+                </button>
+              </div>
+
+              {settingsPage === 'homes' ? (
+                <ManageHomes
+                  houses={houses} hCounts={hCounts}
+                  onRename={renameHome} onAdd={addHome} onDelete={removeHome}
+                  onBack={() => setSettingsPage('main')}
+                />
+              ) : settingsPage === 'categories' ? (
+                <ManageCategories
+                  categories={categories} catCounts={catCounts}
+                  onAddCat={addCategory} onRemoveCat={removeCategory}
+                  onSelectCat={(cat) => { setActiveCatEdit(cat); setSettingsPage('catDetail'); }}
+                  onBack={() => setSettingsPage('main')}
+                />
+              ) : settingsPage === 'catDetail' && activeCatEdit ? (
+                <CategoryDetail
+                  catName={activeCatEdit}
+                  types={categories[activeCatEdit] || []}
+                  onRename={(old, nw) => renameCategory(old, nw)}
+                  onAddType={(t) => addType(activeCatEdit, t)}
+                  onRemoveType={(t) => removeType(activeCatEdit, t)}
+                  onBack={() => setSettingsPage('categories')}
+                />
+              ) : (
+                /* ── MAIN SETTINGS ── */
+                <div>
+                  {/* Profile card */}
+                  <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:22, padding:'14px 16px', background:CARD, borderRadius:16, border:'1px solid rgba(44,42,38,0.07)' }}>
+                    <div style={{ width:50, height:50, borderRadius:'50%', background:'#1a1816', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <span style={{ fontSize:15, fontWeight:600, color:'#f5f3ef', fontFamily:"'Fraunces',Georgia,serif" }}>{initials}</span>
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:15, fontWeight:600, color:'#1a1816', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{profile.name || 'Your Name'}</div>
+                      <div style={{ fontSize:11, color:'#a8a29e', marginTop:2, overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{session?.email}</div>
+                    </div>
+                  </div>
+                  {/* Profile fields */}
+                  <div style={{ marginBottom:20 }}>
+                    <span style={labelStyle}>Display Name</span>
+                    <input value={profile.name} onChange={e => saveProfile({ ...profile, name:e.target.value })} placeholder="Your name"
+                      style={{ width:'100%', padding:'10px 12px', background:CARD, border:'1px solid rgba(44,42,38,0.1)', borderRadius:10, fontSize:13, color:'#1a1816', outline:'none', boxSizing:'border-box' }}/>
+                  </div>
+
+                  <div style={{ height:1, background:'rgba(44,42,38,0.07)', marginBottom:16 }}/>
+
+                  {/* Nav rows */}
+                  {[
+                    { icon:<HomeIcon size={15} strokeWidth={1.8}/>, label:'Manage Homes', sub:`${houses.length} homes`, page:'homes' },
+                    { icon:<Layers size={15} strokeWidth={1.8}/>, label:'Categories & Types', sub:`${Object.keys(categories).length} categories`, page:'categories' },
+                  ].map(item => (
+                    <button key={item.page} onClick={() => setSettingsPage(item.page)} style={{ ...btnReset, width:'100%', display:'flex', alignItems:'center', gap:12, padding:'13px 14px', borderRadius:12, background:CARD, marginBottom:8, border:'1px solid rgba(44,42,38,0.07)', textAlign:'left', cursor:'pointer', justifyContent:'flex-start' }}>
+                      <div style={{ width:34, height:34, borderRadius:9, background:'#f5f3ef', display:'flex', alignItems:'center', justifyContent:'center', color:'#5c5652', flexShrink:0 }}>{item.icon}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:500, color:'#1a1816' }}>{item.label}</div>
+                        <div style={{ fontSize:11, color:'#a8a29e', marginTop:1 }}>{item.sub}</div>
+                      </div>
+                      <ChevronRight size={15} color="#c4b8a8" strokeWidth={1.8}/>
+                    </button>
+                  ))}
+
+                  <div style={{ height:1, background:'rgba(44,42,38,0.07)', margin:'14px 0' }}/>
+                  {clothes.length === 0 && (
+                    <button onClick={() => { seedData(); setShowSettings(false); }} style={{ ...btnReset, width:'100%', padding:'11px', fontSize:13, color:GOLD, fontWeight:500, cursor:'pointer', justifyContent:'center' }}>
+                      Load Sample Data
+                    </button>
+                  )}
+                  <button onClick={() => { if (confirm('Clear all wardrobe data?')) { saveClothes([]); setShowSettings(false); }}}
+                    style={{ ...btnReset, width:'100%', padding:'11px', fontSize:13, color:'#c0392b', fontWeight:500, cursor:'pointer', justifyContent:'center' }}>
+                    Clear All Data
+                  </button>
+                  <div style={{ height:1, background:'rgba(44,42,38,0.07)', margin:'6px 0 10px' }}/>
+                  <button onClick={handleSignOut}
+                    style={{ ...btnReset, width:'100%', padding:'12px 14px', borderRadius:12, background:CARD, border:'1px solid rgba(44,42,38,0.07)', cursor:'pointer', justifyContent:'flex-start', gap:10 }}>
+                    <div style={{ width:34, height:34, borderRadius:9, background:'#fef2f2', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <LogOut size={15} color="#c0392b" strokeWidth={1.8}/>
+                    </div>
+                    <div style={{ flex:1, textAlign:'left' }}>
+                      <div style={{ fontSize:13, fontWeight:500, color:'#c0392b' }}>Sign Out</div>
+                      <div style={{ fontSize:11, color:'#a8a29e', marginTop:1 }}>Signed in as {session?.email}</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </>
+  );
+}
+
+
+// ─── MOUNT ───────────────────────────────────────────────────────────────────
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(WardrobeTracker));
+</script>
+
+<script>
+// Register service worker (probe first to skip in dev/preview)
+if ('serviceWorker' in navigator) {
+  fetch('sw.js', { method: 'HEAD' })
+    .then(r => {
+      if (r.ok) {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('[Potli] SW registered:', reg.scope))
+          .catch(err => console.warn('[Potli] SW error:', err));
+      }
+    })
+    .catch(() => {}); // silently skip in preview environments
+}
+</script>
+</body>
+</html>
