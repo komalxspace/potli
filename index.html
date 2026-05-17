@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#1a1816"/>
   <meta name="color-scheme" content="light"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -19,7 +19,9 @@
   <style>
     *,*::before,*::after{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
     html,body{margin:0;padding:0;background:#FAF7F2;font-family:'Inter',system-ui,sans-serif;
-      padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+      padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+      overflow-x:hidden;width:100%;position:relative;}
+    #root{overflow-x:hidden;width:100%;}
     *{-webkit-overflow-scrolling:touch;}
     .serif{font-family:'Fraunces',Georgia,serif;font-optical-sizing:auto;}
     input,button,select,textarea{font-family:'Inter',system-ui,sans-serif;}
@@ -712,7 +714,6 @@ function WardrobeTracker() {
 
   const [form, setForm]             = useState({ name:'', category:'Tops', subType:'', color:'', house:0, photo:'' });
   const [analyzing, setAnalyzing]   = useState(false);
-  const [analyzeError, setAnalyzeError] = useState('');
   const [addStep, setAddStep]         = useState(0); // 0=type, 1=details, 2=home, 3=summary
   const fileInputRef = useRef(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -970,49 +971,16 @@ function WardrobeTracker() {
   };
 
   // Photo + AI
-  const fileToBase64 = (file) => new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res({ base64: r.result.split(',')[1], mediaType: r.result.split(';')[0].split(':')[1], dataUrl: r.result });
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    setAnalyzing(true); setAnalyzeError('');
-    try {
-      const { base64, mediaType, dataUrl } = await fileToBase64(file);
-      setForm(p => ({ ...p, photo: dataUrl }));
-      const catList = Object.keys(categories);
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-            { type: 'text', text: `Identify clothing item. Return ONLY JSON:\n{"name":"Title Case max 4 words","category":"one of: ${catList.join(', ')}","subType":"from ${JSON.stringify(categories)}","color":"primary color"}` }
-          ]}],
-        }),
-      });
-      const data = await resp.json();
-      const raw = data.content.map(c => c.type === 'text' ? c.text : '').join('').replace(/```json|```/g, '').trim();
-      const p = JSON.parse(raw);
-      const vc = catList.includes(p.category) ? p.category : 'Other';
-      const vt = (categories[vc] || []).includes(p.subType) ? p.subType : '';
-      setForm(prev => ({ ...prev, name: p.name || prev.name, category: vc, subType: vt, color: p.color || prev.color }));
-    } catch { setAnalyzeError('Could not auto-fill — please fill manually.'); }
-    finally { setAnalyzing(false); }
-  };
 
   const openAdd = () => {
     setForm({ name: '', category: '', subType: '', color: '', house: activeHouse ?? 0, photo: '' });
-    setEditingItem(null); setAnalyzeError(''); setAddStep(0);
+    setEditingItem(null); setAddStep(0);
     setShowAddModal(true);
   };
 
   const openEdit = (item) => {
     setForm({ name: item.name, category: item.category, subType: item.subType, color: item.color, house: item.house, photo: item.photo });
-    setEditingItem(item); setAnalyzeError(''); setAddStep(3);
+    setEditingItem(item); setAddStep(1);
     setShowAddModal(true);
   };
 
@@ -1322,16 +1290,6 @@ function WardrobeTracker() {
           )}
         </div>
 
-        {/* ── COACH MARK ── */}
-        {!coachDismissed && clothes.length > 0 && clothes.length <= 4 && !showAddModal && (
-          <div onClick={() => setCoachDismissed(true)} style={{ position:'fixed', inset:0, zIndex:29, display:'flex', alignItems:'flex-end', justifyContent:'flex-end', pointerEvents:'none', padding:'0 20px 88px' }}>
-            <div style={{ background:'#1a1816', color:'#f5f3ef', borderRadius:14, padding:'10px 16px', fontSize:13, fontWeight:500, maxWidth:200, boxShadow:'0 4px 16px rgba(26,24,22,0.22)', pointerEvents:'all', cursor:'pointer', position:'relative', textAlign:'center', lineHeight:1.5 }}>
-              ✨ Tap + to add your first item
-              <div style={{ position:'absolute', bottom:-8, right:26, width:0, height:0, borderLeft:'8px solid transparent', borderRight:'8px solid transparent', borderTop:'8px solid #1a1816' }}/>
-            </div>
-          </div>
-        )}
-
         {/* ── DEFERRED SIGN-UP SHEET ── */}
         {showSignUpSheet && (
           <SignUpSheet
@@ -1355,7 +1313,7 @@ function WardrobeTracker() {
           <div style={{ position:'fixed', inset:0, background:'#FAF7F2', zIndex:40, display:'flex', flexDirection:'column', overflowY:'auto' }}>
 
             {/* ── Top bar ── */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 20px 12px', flexShrink:0 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'calc(env(safe-area-inset-top, 0px) + 18px) 20px 12px', flexShrink:0 }}>
               <button onClick={() => {
                 if (addStep > 0 && !editingItem) setAddStep(s => s - 1);
                 else { setShowAddModal(false); }
@@ -1366,7 +1324,7 @@ function WardrobeTracker() {
               {/* Step dots — only for new items */}
               {!editingItem && (
                 <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                  {[0,1,2,3].map(s => (
+                  {[0,1].map(s => (
                     <div key={s} style={{ width: addStep===s ? 18 : 6, height:6, borderRadius:3, background: addStep===s ? '#1a1816' : addStep>s ? GOLD : '#e0d8cf', transition:'all .2s' }}/>
                   ))}
                 </div>
@@ -1381,47 +1339,34 @@ function WardrobeTracker() {
             {addStep === 0 && (
               <div style={{ flex:1, padding:'8px 20px 32px', display:'flex', flexDirection:'column' }}>
                 {/* Optional photo at top */}
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={async (e) => {
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => {
                   const file = e.target.files?.[0]; if (!file) return;
-                  setAnalyzing(true); setAnalyzeError('');
-                  try {
-                    const { base64, mediaType, dataUrl } = await fileToBase64(file);
-                    setForm(p => ({ ...p, photo: dataUrl }));
-                    const catList = Object.keys(categories);
-                    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                      method:'POST', headers:{'Content-Type':'application/json'},
-                      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:600,
-                        messages:[{ role:'user', content:[
-                          { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 }},
-                          { type:'text', text:`Identify clothing item. Return ONLY JSON:\n{"name":"Title Case max 4 words","category":"one of: ${catList.join(', ')}","subType":"from ${JSON.stringify(categories)}","color":"primary color"}` }
-                        ]}]
-                      })
-                    });
-                    const data = await resp.json();
-                    const raw = data.content.map(c => c.type==='text'?c.text:'').join('').replace(/```json|```/g,'').trim();
-                    const p = JSON.parse(raw);
-                    const vc = catList.includes(p.category) ? p.category : '';
-                    const vt = (categories[vc]||[]).includes(p.subType) ? p.subType : '';
-                    setForm(prev => ({ ...prev, name:p.name||prev.name, category:vc, subType:vt, color:p.color||prev.color }));
-                  } catch { setAnalyzeError('Could not read photo — fill in manually.'); }
-                  finally { setAnalyzing(false); }
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setForm(p => ({ ...p, photo: ev.target.result }));
+                  reader.readAsDataURL(file);
                 }} style={{ display:'none' }}/>
 
                 {/* Photo strip */}
-                <button onClick={() => fileInputRef.current?.click()} style={{ ...btnReset, cursor:'pointer', alignSelf:'center', marginBottom:20, borderRadius:14, overflow:'hidden', background: form.photo ? 'transparent' : CARD, border: form.photo ? 'none' : '1.5px dashed rgba(44,42,38,0.15)', padding: form.photo ? 0 : '10px 18px', flexDirection:'row', gap:7 }}>
+                {/* Photo upload — large, no AI */}
+                <button onClick={() => fileInputRef.current?.click()} style={{ ...btnReset, cursor:'pointer', width:'100%', marginBottom:16, borderRadius:16, overflow:'hidden', background: form.photo ? 'transparent' : CARD, border: form.photo ? 'none' : '1.5px dashed rgba(44,42,38,0.15)', height: form.photo ? 'auto' : 130, flexDirection:'column', gap:8 }}>
                   {form.photo ? (
-                    <div style={{ position:'relative' }}>
-                      <img src={form.photo} style={{ width:72, height:72, borderRadius:14, objectFit:'cover', display:'block' }}/>
-                      <div style={{ position:'absolute', inset:0, borderRadius:14, background:'rgba(0,0,0,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <Camera size={16} color="#fff" strokeWidth={1.8}/>
+                    <div style={{ position:'relative', width:'100%' }}>
+                      <img src={form.photo} style={{ width:'100%', height:130, borderRadius:16, objectFit:'cover', display:'block' }}/>
+                      <div style={{ position:'absolute', inset:0, borderRadius:16, background:'rgba(0,0,0,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <Camera size={20} color="#fff" strokeWidth={1.8}/>
                       </div>
                     </div>
                   ) : (
-                    analyzing ? <><Sparkles size={13} color={GOLD}/><span style={{ fontSize:12, color:'#a8a29e' }}>Scanning…</span></>
-                    : <><Camera size={13} color="#a8a29e" strokeWidth={1.8}/><span style={{ fontSize:12, color:'#a8a29e' }}>Add photo</span><span style={{ fontSize:11, color:GOLD, fontWeight:500 }}>· AI fills form</span></>
+                    <>
+                      <div style={{ width:48, height:48, borderRadius:14, background:'#f5f3ef', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <Camera size={22} color="#a8a29e" strokeWidth={1.6}/>
+                      </div>
+                      <span style={{ fontSize:13, color:'#a8a29e', fontWeight:500 }}>Add a photo</span>
+                      <span style={{ fontSize:11, color:'#c4b8a8' }}>Optional</span>
+                    </>
                   )}
                 </button>
-                {analyzeError && <p style={{ fontSize:11, color:'#c0392b', textAlign:'center', margin:'-12px 0 12px' }}>{analyzeError}</p>}
+
 
                 <h2 className="serif" style={{ fontSize:26, fontWeight:600, color:'#1a1816', margin:'0 0 6px', letterSpacing:'-0.3px' }}>What type?</h2>
                 <p style={{ fontSize:13, color:'#a8a29e', margin:'0 0 20px' }}>Select category, then sub-type</p>
@@ -1566,59 +1511,7 @@ function WardrobeTracker() {
                 </div>
 
                 <div style={{ marginTop:'auto', paddingTop:24 }}>
-                  <button onClick={() => setAddStep(3)}
-                    style={{ ...btnReset, width:'100%', padding:'15px', borderRadius:14, fontSize:14, fontWeight:600, cursor:'pointer',
-                      background: '#1a1816', color:'#f5f3ef', justifyContent:'center',
-                    }}>
-                    Review →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── STEP 3 — Summary ── */}
-            {addStep === 3 && (
-              <div style={{ flex:1, padding:'8px 20px 32px', display:'flex', flexDirection:'column' }}>
-                <div style={{ marginBottom:20 }}>
-                  <h2 className="serif" style={{ fontSize:26, fontWeight:600, color:'#1a1816', margin:'0 0 4px', letterSpacing:'-0.3px' }}>
-                    {editingItem ? 'Edit item' : 'Looks good?'}
-                  </h2>
-                  <p style={{ fontSize:13, color:'#a8a29e', margin:0 }}>Tap any field to change it</p>
-                </div>
-
-                {/* Photo + title hero */}
-                <div style={{ display:'flex', gap:14, marginBottom:20, padding:'16px', background:CARD, borderRadius:18, boxShadow:'0 1px 4px rgba(44,42,38,0.06)' }}>
-                  <div style={{ flexShrink:0 }}>
-                    <img src={form.photo || makeClothSvg(form.subType, form.color)} style={{ width:72, height:72, borderRadius:12, objectFit:'cover', background:'#F5F3EF' }}/>
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:17, fontWeight:600, color:'#1a1816', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>{form.name.trim() || form.subType || form.category || '—'}</div>
-                    <div style={{ fontSize:12, color:'#a8a29e', marginTop:3 }}>
-                      {[form.category, form.subType, form.color].filter(Boolean).join(' · ')}
-                    </div>
-                    <div style={{ fontSize:11, color:GOLD, fontWeight:600, marginTop:5, textTransform:'uppercase', letterSpacing:'0.06em' }}>
-                      {houses[form.house]}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Editable summary rows */}
-                {[
-                  { label:'Type', value: [form.category, form.subType].filter(Boolean).join(' / ') || 'Not set', step:0 },
-                  { label:'Name', value: form.name.trim() || `${form.subType || form.category} (auto)`, step:1 },
-                  { label:'Color', value: form.color || '—', step:1 },
-                  { label:'Home', value: houses[form.house], step:2 },
-                ].map(row => (
-                  <button key={row.label} onClick={() => setAddStep(row.step)}
-                    style={{ ...btnReset, width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 0', borderBottom:'1px solid rgba(44,42,38,0.07)', cursor:'pointer' }}>
-                    <span style={{ fontSize:12, color:'#a8a29e', fontWeight:500, minWidth:52 }}>{row.label}</span>
-                    <span style={{ fontSize:13, color:'#1a1816', fontWeight:500, flex:1, textAlign:'left', marginLeft:12 }}>{row.value}</span>
-                    <ChevronRight size={14} color="#c4b8a8" strokeWidth={1.8}/>
-                  </button>
-                ))}
-
-                <div style={{ marginTop:'auto', paddingTop:28 }}>
-                  <button onClick={handleSave} disabled={!form.category || analyzing}
+                  <button onClick={handleSave} disabled={!form.category}
                     style={{ ...btnReset, width:'100%', padding:'16px', borderRadius:14, fontSize:14, fontWeight:600,
                       cursor: form.category ? 'pointer' : 'not-allowed',
                       background: form.category ? GOLD : '#e0d8cf',
@@ -1630,6 +1523,8 @@ function WardrobeTracker() {
                 </div>
               </div>
             )}
+
+
 
           </div>
         )}
